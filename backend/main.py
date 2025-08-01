@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from routers import player_routes
+from .routers.garageRoutes import router as garage_router
+from .routers.userRoutes import router as user_router
 
 app = FastAPI()
 
@@ -12,4 +13,5 @@ def health_check():
     return {"status": "ok", "message": "Network is healthy"}
 
 app = FastAPI()
-app.include_router(player_routes.router)
+app.include_router(garage_router, prefix="/garage", tags=["garage"])
+app.include_router(user_router, prefix="/auth", tags=["auth"])
