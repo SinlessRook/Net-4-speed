@@ -3,7 +3,7 @@ import websockets
 import time
 
 async def test_upload():
-    uri = "ws://localhost:8000/ws"
+    uri = "ws://localhost:8000/speedtest"
     async with websockets.connect(uri) as websocket:
         await websocket.send("start_upload")
 
