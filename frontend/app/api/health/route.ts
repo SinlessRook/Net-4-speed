@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 export async function GET() {
   // Simulate occasional network issues for testing
-  const shouldFail = Math.random() < 0.05 // 5% chance of failure for testing
+  const shouldFail = Math.random() < 0.0 // 5% chance of failure for testing
 
   if (shouldFail) {
     return NextResponse.json({ status: "error", message: "Network unavailable" }, { status: 503 })
