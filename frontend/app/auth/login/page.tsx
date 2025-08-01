@@ -1,74 +1,79 @@
-"use client"
+/**
+ * @file This file contains the login page.
+ */
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { ArrowLeft, Eye, EyeOff, Wifi, Mail, Lock } from "lucide-react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
+"use client";
 
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, Eye, EyeOff, Wifi, Mail, Lock } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { signin } from "@/lib/api";
+import Link from "next/link";
+
+/**
+ * The login page component.
+ * @returns The login page.
+ */
 const LoginPage = () => {
-  const router = useRouter()
+  const router = useRouter();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-  })
-  const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
+  /**
+   * Handles the input change event.
+   * @param e The event object.
+   */
   const handleInputChange = (e) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }))
-    setError("") // Clear error when user types
-  }
+    }));
+    setError(""); // Clear error when user types
+  };
 
+  /**
+   * Handles the form submission.
+   * @param e The event object.
+   */
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setError("")
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      // Mock authentication logic
-      if (formData.email === "demo@racing.com" && formData.password === "password") {
-        // Store user session (in real app, use proper auth)
-        localStorage.setItem(
-          "user",
-          JSON.stringify({
-            id: "1",
-            email: formData.email,
-            username: "SpeedRacer",
-            avatar: "🏎️",
-            points: 1850,
-            wins: 12,
-            losses: 8,
-          }),
-        )
-        router.push("/")
-      } else {
-        setError("Invalid email or password. Try demo@racing.com / password")
-      }
+      const { access_token, refresh_token } = await signin(
+        formData.email,
+        formData.password,
+      );
+      localStorage.setItem("token", access_token);
+      localStorage.setItem("refreshToken", refresh_token);
+      router.push("/");
     } catch (err) {
-      setError("Login failed. Please try again.")
+      setError("Login failed. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
+  /**
+   * Handles the demo login button click.
+   */
   const handleDemoLogin = async () => {
     setFormData({
       email: "demo@racing.com",
       password: "password",
-    })
-    setLoading(true)
+    });
+    setLoading(true);
 
     // Auto-submit after setting demo credentials
     setTimeout(() => {
@@ -83,10 +88,10 @@ const LoginPage = () => {
           wins: 12,
           losses: 8,
         }),
-      )
-      router.push("/")
-    }, 1000)
-  }
+      );
+      router.push("/");
+    }, 1000);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-cyan-900 to-gray-900 p-4 flex items-center justify-center">
@@ -99,14 +104,20 @@ const LoginPage = () => {
               <span className="text-cyan-400">Network</span> Racing
             </h1>
           </div>
-          <p className="text-gray-300">Sign in to start racing with your internet speed!</p>
+          <p className="text-gray-300">
+            Sign in to start racing with your internet speed!
+          </p>
         </div>
 
         {/* Login Form */}
         <Card className="p-8 bg-gray-800 border-cyan-400">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-white text-center mb-2">Welcome Back!</h2>
-            <p className="text-gray-400 text-center">Sign in to your racing account</p>
+            <h2 className="text-2xl font-bold text-white text-center mb-2">
+              Welcome Back!
+            </h2>
+            <p className="text-gray-400 text-center">
+              Sign in to your racing account
+            </p>
           </div>
 
           {error && (
@@ -118,7 +129,10 @@ const LoginPage = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Email Field */}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-white flex items-center gap-2">
+              <Label
+                htmlFor="email"
+                className="text-white flex items-center gap-2"
+              >
                 <Mail className="w-4 h-4 text-cyan-400" />
                 Email Address
               </Label>
@@ -136,7 +150,10 @@ const LoginPage = () => {
 
             {/* Password Field */}
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-white flex items-center gap-2">
+              <Label
+                htmlFor="password"
+                className="text-white flex items-center gap-2"
+              >
                 <Lock className="w-4 h-4 text-cyan-400" />
                 Password
               </Label>
@@ -156,7 +173,11 @@ const LoginPage = () => {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -170,7 +191,10 @@ const LoginPage = () => {
                 />
                 <span className="ml-2 text-sm text-gray-300">Remember me</span>
               </label>
-              <Link href="/auth/forgot-password" className="text-sm text-cyan-400 hover:text-cyan-300">
+              <Link
+                href="/auth/forgot-password"
+                className="text-sm text-cyan-400 hover:text-cyan-300"
+              >
                 Forgot password?
               </Link>
             </div>
@@ -202,14 +226,19 @@ const LoginPage = () => {
             >
               🎮 Try Demo Account
             </Button>
-            <p className="text-xs text-gray-500 text-center mt-2">Email: demo@racing.com | Password: password</p>
+            <p className="text-xs text-gray-500 text-center mt-2">
+              Email: demo@racing.com | Password: password
+            </p>
           </div>
 
           {/* Sign Up Link */}
           <div className="mt-6 text-center">
             <p className="text-gray-400">
               Don't have an account?{" "}
-              <Link href="/auth/signup" className="text-cyan-400 hover:text-cyan-300 font-medium">
+              <Link
+                href="/auth/signup"
+                className="text-cyan-400 hover:text-cyan-300 font-medium"
+              >
                 Sign up here
               </Link>
             </p>
@@ -218,14 +247,18 @@ const LoginPage = () => {
 
         {/* Back to Home */}
         <div className="mt-6 text-center">
-          <Button onClick={() => router.push("/")} variant="outline" className="flex items-center gap-2 mx-auto">
+          <Button
+            onClick={() => router.push("/")}
+            variant="outline"
+            className="flex items-center gap-2 mx-auto"
+          >
             <ArrowLeft className="w-4 h-4" />
             Back to Home
           </Button>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default LoginPage
+export default LoginPage;

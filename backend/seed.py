@@ -92,10 +92,12 @@ vehicles = [
     },
 ]
 
+
 async def seed_vehicles():
     await db.vehicles.delete_many({})  # wipe garage clean, optional
     await db.vehicles.insert_many(vehicles)
     print("Garage seeded!")
+
 
 if __name__ == "__main__":
     asyncio.run(seed_vehicles())

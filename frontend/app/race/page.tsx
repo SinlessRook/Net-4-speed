@@ -1,239 +1,177 @@
-"use client"
+/**
+ * @file This file contains the race page.
+ */
 
-import { useState, useEffect, useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { ArrowLeft } from "lucide-react"
-import { useRouter } from "next/navigation"
+"use client";
 
+import { useState, useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+
+/**
+ * The race page component.
+ * @returns The race page.
+ */
 const RacePage = () => {
-  const router = useRouter()
-  const [isRacing, setIsRacing] = useState(false)
-  const [raceTime, setRaceTime] = useState(0)
-  const [playerData, setPlayerData] = useState({ ping: 45, download: 85, upload: 25 })
-  const [opponentData, setOpponentData] = useState({ ping: 60, download: 70, upload: 20 })
-  const [playerPosition, setPlayerPosition] = useState(0)
-  const [opponentPosition, setOpponentPosition] = useState(0)
-  const [playerSpeed, setPlayerSpeed] = useState(0)
-  const [opponentSpeed, setOpponentSpeed] = useState(0)
-  const [showTurbo, setShowTurbo] = useState(false)
-  const [winner, setWinner] = useState(null)
-  const [obstacles, setObstacles] = useState([])
-  const [playerHitObstacle, setPlayerHitObstacle] = useState(false)
-  const [opponentHitObstacle, setOpponentHitObstacle] = useState(false)
-  const [showPartyPoppers, setShowPartyPoppers] = useState(false)
-  const [confetti, setConfetti] = useState([])
-  const [isConnected, setIsConnected] = useState(true)
-  const [connectionLost, setConnectionLost] = useState(false)
-  const [countdown, setCountdown] = useState(3)
-  const [raceStarted, setRaceStarted] = useState(false)
+  const router = useRouter();
+  const [isRacing, setIsRacing] = useState(false);
+  const [raceTime, setRaceTime] = useState(0);
+  const [playerData, setPlayerData] = useState({
+    ping: 0,
+    download: 0,
+    upload: 0,
+  });
+  const [opponentData, setOpponentData] = useState({
+    ping: 0,
+    download: 0,
+    upload: 0,
+  });
+  const [playerPosition, setPlayerPosition] = useState(0);
+  const [opponentPosition, setOpponentPosition] = useState(0);
+  const [playerSpeed, setPlayerSpeed] = useState(0);
+  const [opponentSpeed, setOpponentSpeed] = useState(0);
+  const [winner, setWinner] = useState(null);
+  const [countdown, setCountdown] = useState(3);
+  const [raceStarted, setRaceStarted] = useState(false);
+  const [obstacles, setObstacles] = useState([]);
+  const [playerHitObstacle, setPlayerHitObstacle] = useState(false);
+  const [opponentHitObstacle, setOpponentHitObstacle] = useState(false);
+  const [showTurbo, setShowTurbo] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
+  const [showPartyPoppers, setShowPartyPoppers] = useState(false);
+  const [confetti, setConfetti] = useState([]);
+  const ws = useRef(null);
 
-  const raceRef = useRef()
-  const networkRef = useRef()
+  useEffect(() => {
+    ws.current = new WebSocket("ws://localhost:8000/speedtest");
 
-  const playSound = (soundFile, volume = 0.5) => {
-    try {
-      const audio = new Audio(soundFile)
-      audio.volume = volume
-      audio.play().catch((e) => console.log("Audio play failed:", e))
-    } catch (e) {
-      console.log("Audio not supported:", e)
-    }
-  }
+    ws.current.onopen = () => {
+      console.log("websocket connected");
+    };
 
-  // Connection monitoring function
-  const checkConnection = async () => {
-    try {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 3000)
-
-      const response = await fetch("/api/health", {
-        method: "GET",
-        signal: controller.signal,
-      })
-
-      clearTimeout(timeoutId)
-
-      if (response.ok) {
-        setIsConnected(true)
-        setConnectionLost(false)
-        return true
-      } else {
-        throw new Error("Network response not ok")
+    ws.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === "download_speed") {
+        setPlayerData((prev) => ({ ...prev, download: data.speed }));
+        setPlayerSpeed(data.speed);
+        setPlayerPosition((prev) => Math.min(100, prev + data.speed / 10));
+      } else if (data.type === "upload_speed") {
+        setPlayerData((prev) => ({ ...prev, upload: data.speed }));
+        setPlayerSpeed(data.speed);
+        setPlayerPosition((prev) => Math.min(100, prev + data.speed / 10));
       }
-    } catch (error) {
-      console.log("Connection check failed:", error)
-      setIsConnected(false)
-      setConnectionLost(true)
-      return false
+    };
+
+    return () => {
+      ws.current.close();
+    };
+  }, []);
+
+  useEffect(() => {
+    let countdownInterval;
+    if (countdown > 0) {
+      countdownInterval = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev === 1) {
+            setRaceStarted(true);
+            setIsRacing(true);
+            setObstacles(generateObstacles());
+            ws.current.send("start_download");
+          }
+          return prev - 1;
+        });
+      }, 1000);
     }
-  }
 
-  // Generate realistic network data
-  const generateNetworkData = async () => {
-    const isOnline = await checkConnection()
+    return () => {
+      if (countdownInterval) clearInterval(countdownInterval);
+    };
+  }, []);
 
-    if (!isOnline) {
-      return {
-        ping: 999,
-        download: 0,
-        upload: 0,
-        connected: false,
-      }
+  useEffect(() => {
+    if (isRacing && raceStarted) {
+      const raceInterval = setInterval(() => {
+        setRaceTime((prev) => prev + 0.1);
+        // Simulate opponent
+        const opponentSpeed = Math.random() * 100;
+        setOpponentSpeed(opponentSpeed);
+        setOpponentPosition((prev) => Math.min(100, prev + opponentSpeed / 10));
+
+        const playerHit = checkObstacleCollision(playerPosition, 25, obstacles);
+        const opponentHit = checkObstacleCollision(
+          opponentPosition,
+          65,
+          obstacles,
+        );
+
+        setPlayerHitObstacle(playerHit);
+        setOpponentHitObstacle(opponentHit);
+
+        const playerSpeedModifier = playerHit ? 0.3 : 1;
+
+        setPlayerPosition((prev) =>
+          Math.min(100, prev + (playerSpeed / 10) * playerSpeedModifier),
+        );
+      }, 100);
+
+      return () => {
+        clearInterval(raceInterval);
+      };
     }
+  }, [
+    isRacing,
+    raceStarted,
+    obstacles,
+    playerPosition,
+    opponentPosition,
+    playerSpeed,
+  ]);
 
-    return {
-      ping: Math.random() * 100 + 10,
-      download: Math.random() * 100 + 5,
-      upload: Math.random() * 50 + 2,
-      connected: true,
+  useEffect(() => {
+    if (playerPosition >= 100 || opponentPosition >= 100) {
+      setIsRacing(false);
+      const playerWon = playerPosition >= opponentPosition;
+      setWinner(playerWon ? "player" : "opponent");
     }
-  }
+  }, [playerPosition, opponentPosition]);
 
-  // Calculate car speed based on network performance
-  const calculateSpeed = (networkData) => {
-    const pingScore = Math.max(0, 100 - networkData.ping)
-    const downloadScore = Math.min(100, networkData.download * 2)
-    const uploadScore = Math.min(100, networkData.upload * 4)
-    return (pingScore + downloadScore + uploadScore) / 3
-  }
-
-  // Generate obstacles
+  /**
+   * Generates a random set of obstacles.
+   * @returns An array of obstacles.
+   */
   const generateObstacles = () => {
-    const obstacleTypes = ["cone", "barrier", "oil", "pothole"]
+    const obstacleTypes = ["cone", "barrier", "oil", "pothole"];
     return Array.from({ length: 12 }, (_, i) => ({
       id: i,
       x: Math.random() * 80 + 10,
       y: Math.random() > 0.5 ? 25 : 65,
       type: obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)],
-    }))
-  }
+    }));
+  };
 
-  // Check obstacle collision
+  /**
+   * Checks if a car has collided with an obstacle.
+   * @param carPosition The position of the car.
+   * @param carLane The lane of the car.
+   * @param obstacles The array of obstacles.
+   * @returns True if the car has collided, false otherwise.
+   */
   const checkObstacleCollision = (carPosition, carLane, obstacles) => {
-    return obstacles.some((obstacle) => Math.abs(carPosition - obstacle.x) < 8 && Math.abs(carLane - obstacle.y) < 15)
-  }
+    return obstacles.some(
+      (obstacle) =>
+        Math.abs(carPosition - obstacle.x) < 8 &&
+        Math.abs(carLane - obstacle.y) < 15,
+    );
+  };
 
-  // Start race countdown
-  useEffect(() => {
-    let countdownInterval
-    if (countdown > 0) {
-      countdownInterval = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev === 1) {
-            setRaceStarted(true)
-            setIsRacing(true)
-            playSound("/sounds/engine-start.mp3", 0.8)
-            setObstacles(generateObstacles())
-          }
-          return prev - 1
-        })
-      }, 1000)
-    }
-
-    return () => {
-      if (countdownInterval) clearInterval(countdownInterval)
-    }
-  }, [])
-
-  // Network monitoring during race
-  useEffect(() => {
-    if (isRacing && raceStarted) {
-      networkRef.current = setInterval(async () => {
-        const newPlayerData = await generateNetworkData()
-        const newOpponentData = await generateNetworkData()
-
-        // Check if connection is lost
-        if (!newPlayerData.connected || connectionLost) {
-          setIsRacing(false)
-          router.push("/?crashed=true")
-          return
-        }
-
-        setPlayerData(newPlayerData)
-        setOpponentData(newOpponentData)
-
-        const newPlayerSpeed = calculateSpeed(newPlayerData)
-        const newOpponentSpeed = calculateSpeed(newOpponentData)
-
-        setPlayerSpeed(newPlayerSpeed)
-        setOpponentSpeed(newOpponentSpeed)
-
-        // Turbo effects
-        if (newPlayerSpeed > 80) {
-          setShowTurbo(true)
-          playSound("/sounds/turbo-boost.mp3", 0.6)
-          setTimeout(() => setShowTurbo(false), 1000)
-        }
-
-        // Check obstacle collisions
-        const playerHit = checkObstacleCollision(playerPosition, 25, obstacles)
-        const opponentHit = checkObstacleCollision(opponentPosition, 65, obstacles)
-
-        setPlayerHitObstacle(playerHit)
-        setOpponentHitObstacle(opponentHit)
-
-        if (playerHit && !playerHitObstacle) {
-          playSound("/sounds/crash.mp3", 0.7)
-        }
-
-        // Update positions based on network speed
-        const playerSpeedModifier = playerHit ? 0.3 : 1
-        const opponentSpeedModifier = opponentHit ? 0.3 : 1
-
-        const playerMovement = (newPlayerSpeed / 12) * playerSpeedModifier
-        const opponentMovement = (newOpponentSpeed / 12) * opponentSpeedModifier
-
-        setPlayerPosition((prev) => Math.min(100, prev + playerMovement))
-        setOpponentPosition((prev) => Math.min(100, prev + opponentMovement))
-      }, 400)
-    }
-
-    return () => {
-      if (networkRef.current) clearInterval(networkRef.current)
-    }
-  }, [isRacing, raceStarted, obstacles, playerPosition, opponentPosition, playerHitObstacle, connectionLost])
-
-  // Race timer
-  useEffect(() => {
-    if (isRacing && raceStarted) {
-      raceRef.current = setInterval(() => {
-        setRaceTime((prev) => prev + 0.1)
-      }, 100)
-    }
-
-    return () => {
-      if (raceRef.current) clearInterval(raceRef.current)
-    }
-  }, [isRacing, raceStarted])
-
-  // Check for race finish
-  useEffect(() => {
-    if (playerPosition >= 100 || opponentPosition >= 100) {
-      setIsRacing(false)
-      const playerWon = playerPosition >= opponentPosition
-      setWinner(playerWon ? "player" : "opponent")
-
-      if (playerWon) {
-        playSound("/sounds/victory-fanfare.mp3", 0.8)
-        setShowPartyPoppers(true)
-        const newConfetti = Array.from({ length: 50 }, (_, i) => ({
-          id: i,
-          x: Math.random() * 100,
-          y: Math.random() * 100,
-          color: ["#ff0088", "#00ff88", "#0088ff", "#ff8800", "#8800ff"][Math.floor(Math.random() * 5)],
-        }))
-        setConfetti(newConfetti)
-
-        setTimeout(() => {
-          setShowPartyPoppers(false)
-          setConfetti([])
-        }, 3000)
-      }
-    }
-  }, [playerPosition, opponentPosition])
-
-  const RaceTrack = () => (
+  /**
+   * The race track component.
+   * @param obstacles The array of obstacles.
+   * @returns The race track component.
+   */
+  const RaceTrack = ({ obstacles }) => (
     <div className="relative h-96 bg-gradient-to-b from-gray-800 to-gray-900 rounded-lg overflow-hidden border-2 border-cyan-400">
       {/* Track background with asphalt texture */}
       <div className="absolute inset-0 bg-gradient-to-r from-gray-700 via-gray-600 to-gray-700">
@@ -322,7 +260,9 @@ const RacePage = () => {
           left: `${playerPosition}%`,
           top: "20%",
           transform: "translate(-50%, -50%)",
-          filter: playerHitObstacle ? "brightness(0.7) contrast(1.2)" : "brightness(1)",
+          filter: playerHitObstacle
+            ? "brightness(0.7) contrast(1.2)"
+            : "brightness(1)",
         }}
       >
         <div className="relative">
@@ -364,7 +304,9 @@ const RacePage = () => {
           left: `${opponentPosition}%`,
           top: "60%",
           transform: "translate(-50%, -50%)",
-          filter: opponentHitObstacle ? "brightness(0.7) contrast(1.2)" : "brightness(1)",
+          filter: opponentHitObstacle
+            ? "brightness(0.7) contrast(1.2)"
+            : "brightness(1)",
         }}
       >
         <div className="relative">
@@ -378,7 +320,9 @@ const RacePage = () => {
 
       {/* Finish line */}
       <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-b from-white via-black to-white opacity-90 flex items-center justify-center">
-        <div className="text-black font-bold text-xs transform rotate-90">FINISH</div>
+        <div className="text-black font-bold text-xs transform rotate-90">
+          FINISH
+        </div>
       </div>
 
       {/* Connection status */}
@@ -386,7 +330,9 @@ const RacePage = () => {
         <div
           className={`w-3 h-3 rounded-full ${isConnected ? "bg-green-400 animate-pulse" : "bg-red-400 animate-ping"}`}
         />
-        <span className={`text-sm font-medium ${isConnected ? "text-green-400" : "text-red-400"}`}>
+        <span
+          className={`text-sm font-medium ${isConnected ? "text-green-400" : "text-red-400"}`}
+        >
           {isConnected ? "Connected" : "Connection Lost"}
         </span>
       </div>
@@ -394,7 +340,9 @@ const RacePage = () => {
       {/* Race countdown */}
       {countdown > 0 && !raceStarted && (
         <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-          <div className="text-8xl font-bold text-white animate-pulse">{countdown}</div>
+          <div className="text-8xl font-bold text-white animate-pulse">
+            {countdown}
+          </div>
         </div>
       )}
 
@@ -405,7 +353,10 @@ const RacePage = () => {
             <div className="text-6xl font-bold text-white mb-4">
               {winner === "player" ? "🏆 YOU WIN!" : "😔 YOU LOSE!"}
             </div>
-            <Button onClick={() => router.push("/")} className="bg-cyan-600 hover:bg-cyan-700">
+            <Button
+              onClick={() => router.push("/")}
+              className="bg-cyan-600 hover:bg-cyan-700"
+            >
               Back to Menu
             </Button>
           </div>
@@ -428,30 +379,40 @@ const RacePage = () => {
               }}
             />
           ))}
-          <div className="absolute top-4 left-4 text-4xl animate-bounce">🎉</div>
-          <div className="absolute top-4 right-4 text-4xl animate-bounce">🎊</div>
+          <div className="absolute top-4 left-4 text-4xl animate-bounce">
+            🎉
+          </div>
+          <div className="absolute top-4 right-4 text-4xl animate-bounce">
+            🎊
+          </div>
         </div>
       )}
     </div>
-  )
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-cyan-900 to-gray-900 p-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <Button onClick={() => router.push("/")} variant="outline" className="flex items-center gap-2">
+          <Button
+            onClick={() => router.push("/")}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
             <ArrowLeft className="w-4 h-4" />
             Back to Menu
           </Button>
           <h1 className="text-4xl font-bold text-white">
             <span className="text-cyan-400">Network</span> Speed Race
           </h1>
-          <div className="text-2xl font-bold text-white">{raceTime.toFixed(1)}s</div>
+          <div className="text-2xl font-bold text-white">
+            {raceTime.toFixed(1)}s
+          </div>
         </div>
 
         {/* Race Track */}
-        <RaceTrack />
+        <RaceTrack obstacles={obstacles} />
 
         {/* Race Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
@@ -463,19 +424,27 @@ const RacePage = () => {
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
-                <div className="text-3xl font-bold text-cyan-400">{Math.round(playerSpeed)} MPH</div>
+                <div className="text-3xl font-bold text-cyan-400">
+                  {Math.round(playerSpeed)} MPH
+                </div>
                 <div className="text-gray-400">Current Speed</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-green-400">{Math.round(playerPosition)}%</div>
+                <div className="text-3xl font-bold text-green-400">
+                  {Math.round(playerPosition)}%
+                </div>
                 <div className="text-gray-400">Progress</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-yellow-400">{Math.round(playerData.ping)}ms</div>
+                <div className="text-lg font-bold text-yellow-400">
+                  {Math.round(playerData.ping)}ms
+                </div>
                 <div className="text-gray-400">Ping</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-blue-400">{Math.round(playerData.download)} Mbps</div>
+                <div className="text-lg font-bold text-blue-400">
+                  {Math.round(playerData.download)} Mbps
+                </div>
                 <div className="text-gray-400">Download</div>
               </div>
             </div>
@@ -489,19 +458,27 @@ const RacePage = () => {
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
-                <div className="text-3xl font-bold text-cyan-400">{Math.round(opponentSpeed)} MPH</div>
+                <div className="text-3xl font-bold text-cyan-400">
+                  {Math.round(opponentSpeed)} MPH
+                </div>
                 <div className="text-gray-400">Current Speed</div>
               </div>
               <div className="text-center">
-                <div className="text-3xl font-bold text-red-400">{Math.round(opponentPosition)}%</div>
+                <div className="text-3xl font-bold text-red-400">
+                  {Math.round(opponentPosition)}%
+                </div>
                 <div className="text-gray-400">Progress</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-yellow-400">{Math.round(opponentData.ping)}ms</div>
+                <div className="text-lg font-bold text-yellow-400">
+                  {Math.round(opponentData.ping)}ms
+                </div>
                 <div className="text-gray-400">Ping</div>
               </div>
               <div className="text-center">
-                <div className="text-lg font-bold text-blue-400">{Math.round(opponentData.download)} Mbps</div>
+                <div className="text-lg font-bold text-blue-400">
+                  {Math.round(opponentData.download)} Mbps
+                </div>
                 <div className="text-gray-400">Download</div>
               </div>
             </div>
@@ -510,10 +487,17 @@ const RacePage = () => {
 
         {/* Race Controls */}
         <div className="flex justify-center mt-6 gap-4">
-          <Button onClick={() => router.push("/")} variant="outline" className="px-8 py-3">
+          <Button
+            onClick={() => router.push("/")}
+            variant="outline"
+            className="px-8 py-3"
+          >
             Exit Race
           </Button>
-          <Button onClick={() => window.location.reload()} className="px-8 py-3 bg-green-600 hover:bg-green-700">
+          <Button
+            onClick={() => window.location.reload()}
+            className="px-8 py-3 bg-green-600 hover:bg-green-700"
+          >
             Race Again
           </Button>
         </div>
@@ -530,7 +514,7 @@ const RacePage = () => {
         }
       `}</style>
     </div>
-  )
-}
+  );
+};
 
-export default RacePage
+export default RacePage;

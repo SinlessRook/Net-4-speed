@@ -1,20 +1,64 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Trophy, Wifi, Settings, Users, Play, LogOut, User } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import {
+  Trophy,
+  Wifi,
+  Settings,
+  Users,
+  Play,
+  LogOut,
+  User,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
 
+/**
+ * NetworkSpeedRacing component for the main game interface.
+ * Manages game state, network simulation, and user interactions.
+ */
 const NetworkSpeedRacing = () => {
-  const [gameState, setGameState] = useState("menu")
-  const [isRacing, setIsRacing] = useState(false)
-  const [raceTime, setRaceTime] = useState(0)
-  const [playerData, setPlayerData] = useState({ ping: 0, download: 0, upload: 0 })
-  const [opponentData, setOpponentData] = useState({ ping: 0, download: 0, upload: 0 })
-  const [playerPosition, setPlayerPosition] = useState(0)
-  const [opponentPosition, setOpponentPosition] = useState(0)
+  /**
+   * @type {[string, Function]} gameState - Current state of the game (e.g., "menu", "racing", "notfound").
+   */
+  const [gameState, setGameState] = useState("menu");
+  /**
+   * @type {[boolean, Function]} isRacing - Indicates if a race is currently in progress.
+   */
+  const [isRacing, setIsRacing] = useState(false);
+  /**
+   * @type {[number, Function]} raceTime - Current time elapsed in the race.
+   */
+  const [raceTime, setRaceTime] = useState(0);
+  /**
+   * @type {[object, Function]} playerData - Network data for the player (ping, download, upload).
+   */
+  const [playerData, setPlayerData] = useState({
+    ping: 0,
+    download: 0,
+    upload: 0,
+  });
+  /**
+   * @type {[object, Function]} opponentData - Network data for the opponent (ping, download, upload).
+   */
+  const [opponentData, setOpponentData] = useState({
+    ping: 0,
+    download: 0,
+    upload: 0,
+  });
+  /**
+   * @type {[number, Function]} playerPosition - Player's current position on the race track (0-100%).
+   */
+  const [playerPosition, setPlayerPosition] = useState(0);
+  /**
+   * @type {[number, Function]} opponentPosition - Opponent's current position on the race track (0-100%).
+   */
+  const [opponentPosition, setOpponentPosition] = useState(0);
+  /**
+   * @type {[object, Function]} selectedCar - Details of the currently selected vehicle.
+   */
   const [selectedCar, setSelectedCar] = useState({
     id: 1,
     name: "Lightning Bolt",
@@ -23,104 +67,170 @@ const NetworkSpeedRacing = () => {
     price: 0,
     type: "car",
     image: "/images/green-sports-car.png",
-  })
-  const [playerPoints, setPlayerPoints] = useState(1850)
-  const [showTurbo, setShowTurbo] = useState(false)
-  const [winner, setWinner] = useState(null)
-  const [reactions, setReactions] = useState([])
-  const [obstacles, setObstacles] = useState([])
-  const [showMultiplayerModal, setShowMultiplayerModal] = useState(false)
-  const [roomCode, setRoomCode] = useState("")
-  const [isHost, setIsHost] = useState(false)
-  const [vehicleType, setVehicleType] = useState("car")
-  const [playerHitObstacle, setPlayerHitObstacle] = useState(false)
-  const [opponentHitObstacle, setOpponentHitObstacle] = useState(false)
-  const [showPartyPoppers, setShowPartyPoppers] = useState(false)
-  const [confetti, setConfetti] = useState([])
-  const [roomPlayers, setRoomPlayers] = useState([])
-  const [maxPlayers, setMaxPlayers] = useState(4)
-  const [turboLevel, setTurboLevel] = useState(0) // 0-3 levels
-  const [turboParticles, setTurboParticles] = useState([])
-  const [isConnected, setIsConnected] = useState(true)
-  const [connectionLost, setConnectionLost] = useState(false)
-  const [lastNetworkUpdate, setLastNetworkUpdate] = useState(Date.now())
-  const [user, setUser] = useState(null)
-  const [showWelcome, setShowWelcome] = useState(false)
+  });
+  /**
+   * @type {[number, Function]} playerPoints - Player's current in-game points.
+   */
+  const [playerPoints, setPlayerPoints] = useState(1850);
+  /**
+   * @type {[boolean, Function]} showTurbo - Controls the visibility of turbo effects.
+   */
+  const [showTurbo, setShowTurbo] = useState(false);
+  /**
+   * @type {[string|null, Function]} winner - Stores the winner of the race, if any.
+   */
+  const [winner, setWinner] = useState(null);
+  /**
+   * @type {[Array<string>, Function]} reactions - Array of emojis for in-game reactions.
+   */
+  const [reactions, setReactions] = useState([]);
+  /**
+   * @type {[Array<object>, Function]} obstacles - Array of obstacles on the race track.
+   */
+  const [obstacles, setObstacles] = useState([]);
+  /**
+   * @type {[boolean, Function]} showMultiplayerModal - Controls the visibility of the multiplayer modal.
+   */
+  const [showMultiplayerModal, setShowMultiplayerModal] = useState(false);
+  /**
+   * @type {[string, Function]} roomCode - Code for the multiplayer room.
+   */
+  const [roomCode, setRoomCode] = useState("");
+  /**
+   * @type {[boolean, Function]} isHost - Indicates if the current user is the host of the multiplayer room.
+   */
+  const [isHost, setIsHost] = useState(false);
+  /**
+   * @type {[string, Function]} vehicleType - Type of vehicle selected (e.g., "car", "bike").
+   */
+  const [vehicleType, setVehicleType] = useState("car");
+  /**
+   * @type {[boolean, Function]} playerHitObstacle - Indicates if the player's vehicle hit an obstacle.
+   */
+  const [playerHitObstacle, setPlayerHitObstacle] = useState(false);
+  /**
+   * @type {[boolean, Function]} opponentHitObstacle - Indicates if the opponent's vehicle hit an obstacle.
+   */
+  const [opponentHitObstacle, setOpponentHitObstacle] = useState(false);
+  /**
+   * @type {[boolean, Function]} showPartyPoppers - Controls the visibility of party popper effects.
+   */
+  const [showPartyPoppers, setShowPartyPoppers] = useState(false);
+  /**
+   * @type {[Array<object>, Function]} confetti - Array of confetti particles for celebratory effects.
+   */
+  const [confetti, setConfetti] = useState([]);
+  /**
+   * @type {[Array<object>, Function]} roomPlayers - List of players in the current multiplayer room.
+   */
+  const [roomPlayers, setRoomPlayers] = useState([]);
+  /**
+   * @type {[number, Function]} maxPlayers - Maximum number of players allowed in a multiplayer room.
+   */
+  const [maxPlayers, setMaxPlayers] = useState(4);
+  /**
+   * @type {[number, Function]} turboLevel - Current turbo level (0-3).
+   */
+  const [turboLevel, setTurboLevel] = useState(0); // 0-3 levels
+  /**
+   * @type {[Array<object>, Function]} turboParticles - Array of particles for turbo effects.
+   */
+  const [turboParticles, setTurboParticles] = useState([]);
+  /**
+   * @type {[boolean, Function]} isConnected - Indicates if the client is currently connected to the network.
+   */
+  const [isConnected, setIsConnected] = useState(true);
+  /**
+   * @type {[boolean, Function]} connectionLost - Indicates if the network connection was lost.
+   */
+  const [connectionLost, setConnectionLost] = useState(false);
+  /**
+   * @type {[number, Function]} lastNetworkUpdate - Timestamp of the last network data update.
+   */
+  const [lastNetworkUpdate, setLastNetworkUpdate] = useState(Date.now());
+  /**
+   * @type {[object|null, Function]} user - Current authenticated user data.
+   */
+  const [user, setUser] = useState(null);
+  /**
+   * @type {[boolean, Function]} showWelcome - Controls the visibility of the welcome message.
+   */
+  const [showWelcome, setShowWelcome] = useState(false);
 
-  const raceRef = useRef()
-  const networkRef = useRef()
-  const router = useRouter()
+  const raceRef = useRef();
+  const networkRef = useRef();
+  const router = useRouter();
 
   // Check for user session on component mount
   useEffect(() => {
-    const storedUser = localStorage.getItem("user")
+    const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      const userData = JSON.parse(storedUser)
-      setUser(userData)
-      setPlayerPoints(userData.points || 1850)
+      const userData = JSON.parse(storedUser);
+      setUser(userData);
+      setPlayerPoints(userData.points || 1850);
     }
 
     // Check for welcome parameter
-    const urlParams = new URLSearchParams(window.location.search)
+    const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("welcome") === "true") {
-      setShowWelcome(true)
-      setTimeout(() => setShowWelcome(false), 5000)
+      setShowWelcome(true);
+      setTimeout(() => setShowWelcome(false), 5000);
     }
 
     if (urlParams.get("crashed") === "true") {
-      setGameState("notfound")
+      setGameState("notfound");
     }
-  }, [])
+  }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("user")
-    setUser(null)
-    setPlayerPoints(0)
-    router.push("/auth/login")
-  }
+    localStorage.removeItem("user");
+    setUser(null);
+    setPlayerPoints(0);
+    router.push("/auth/login");
+  };
 
   const playSound = (soundFile, volume = 0.5) => {
     try {
-      const audio = new Audio(soundFile)
-      audio.volume = volume
-      audio.play().catch((e) => console.log("Audio play failed:", e))
+      const audio = new Audio(soundFile);
+      audio.volume = volume;
+      audio.play().catch((e) => console.log("Audio play failed:", e));
     } catch (e) {
-      console.log("Audio not supported:", e)
+      console.log("Audio not supported:", e);
     }
-  }
+  };
 
   // Connection monitoring function
   const checkConnection = async () => {
     try {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 3000) // 3 second timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000); // 3 second timeout
 
       const response = await fetch("/api/health", {
         method: "GET",
         signal: controller.signal,
-      })
+      });
 
-      clearTimeout(timeoutId)
+      clearTimeout(timeoutId);
 
       if (response.ok) {
-        setIsConnected(true)
-        setConnectionLost(false)
-        setLastNetworkUpdate(Date.now())
-        return true
+        setIsConnected(true);
+        setConnectionLost(false);
+        setLastNetworkUpdate(Date.now());
+        return true;
       } else {
-        throw new Error("Network response not ok")
+        throw new Error("Network response not ok");
       }
     } catch (error) {
-      console.log("Connection check failed:", error)
-      setIsConnected(false)
-      setConnectionLost(true)
-      return false
+      console.log("Connection check failed:", error);
+      setIsConnected(false);
+      setConnectionLost(true);
+      return false;
     }
-  }
+  };
 
   // Simulated network data - in real app, this would come from actual speed tests
   const generateNetworkData = async () => {
-    const isOnline = await checkConnection()
+    const isOnline = await checkConnection();
 
     if (!isOnline) {
       return {
@@ -128,7 +238,7 @@ const NetworkSpeedRacing = () => {
         download: 0,
         upload: 0,
         connected: false,
-      }
+      };
     }
 
     return {
@@ -136,16 +246,16 @@ const NetworkSpeedRacing = () => {
       download: Math.random() * 100 + 5, // 5-105 Mbps
       upload: Math.random() * 50 + 2, // 2-52 Mbps
       connected: true,
-    }
-  }
+    };
+  };
 
   const calculateSpeed = (networkData) => {
     // Convert network performance to car speed (0-100)
-    const pingScore = Math.max(0, 100 - networkData.ping)
-    const downloadScore = Math.min(100, networkData.download * 2)
-    const uploadScore = Math.min(100, networkData.upload * 4)
-    return (pingScore + downloadScore + uploadScore) / 3
-  }
+    const pingScore = Math.max(0, 100 - networkData.ping);
+    const downloadScore = Math.min(100, networkData.download * 2);
+    const uploadScore = Math.min(100, networkData.upload * 4);
+    return (pingScore + downloadScore + uploadScore) / 3;
+  };
 
   const vehicles = [
     {
@@ -220,26 +330,36 @@ const NetworkSpeedRacing = () => {
       type: "bike",
       image: "/images/red-motorcycle.png",
     },
-  ]
+  ];
 
   const generateObstacles = () => {
-    const obstacleTypes = ["cone", "barrier", "oil", "pothole"]
+    const obstacleTypes = ["cone", "barrier", "oil", "pothole"];
     return Array.from({ length: 8 }, (_, i) => ({
       id: i,
       x: Math.random() * 80 + 10, // 10-90% across track
       y: Math.random() > 0.5 ? 25 : 65, // Top or bottom lane
       type: obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)],
-    }))
-  }
+    }));
+  };
 
   const checkObstacleCollision = (carPosition, carLane, obstacles) => {
-    return obstacles.some((obstacle) => Math.abs(carPosition - obstacle.x) < 8 && Math.abs(carLane - obstacle.y) < 15)
-  }
+    return obstacles.some(
+      (obstacle) =>
+        Math.abs(carPosition - obstacle.x) < 8 &&
+        Math.abs(carLane - obstacle.y) < 15,
+    );
+  };
 
   const players = [
     { id: 1, name: "SpeedDemon", isp: "Fiber Pro", avatar: "🏎️", points: 2450 },
     { id: 2, name: "TurboNet", isp: "Ultra ISP", avatar: "🚗", points: 2380 },
-    { id: 3, name: "RaceKing", isp: "Lightning Web", avatar: "🏁", points: 2200 },
+    {
+      id: 3,
+      name: "RaceKing",
+      isp: "Lightning Web",
+      avatar: "🏁",
+      points: 2200,
+    },
     { id: 4, name: "NetNinja", isp: "Speed Force", avatar: "⚡", points: 2100 },
     {
       id: 5,
@@ -248,26 +368,26 @@ const NetworkSpeedRacing = () => {
       avatar: user?.avatar || "🎮",
       points: playerPoints,
     },
-  ]
+  ];
 
   const startRace = () => {
     if (!user) {
-      router.push("/auth/login")
-      return
+      router.push("/auth/login");
+      return;
     }
-    playSound("/sounds/engine-start.mp3", 0.7)
-    router.push("/race")
-  }
+    playSound("/sounds/engine-start.mp3", 0.7);
+    router.push("/race");
+  };
 
   const addReaction = (emoji) => {
-    setReactions((prev) => [...prev, emoji])
+    setReactions((prev) => [...prev, emoji]);
     setTimeout(() => {
-      setReactions((prev) => prev.slice(1))
-    }, 2000)
-  }
+      setReactions((prev) => prev.slice(1));
+    }, 2000);
+  };
 
   const Speedometer = ({ data, label }) => {
-    const speed = calculateSpeed(data)
+    const speed = calculateSpeed(data);
 
     return (
       <div className="relative">
@@ -276,7 +396,9 @@ const NetworkSpeedRacing = () => {
             <div className="absolute inset-4 rounded-full border border-cyan-600">
               <div
                 className="absolute top-1/2 left-1/2 w-1 h-8 bg-cyan-400 origin-bottom transform -translate-x-1/2 -translate-y-full transition-transform duration-300"
-                style={{ transform: `translate(-50%, -100%) rotate(${(speed / 100) * 180 - 90}deg)` }}
+                style={{
+                  transform: `translate(-50%, -100%) rotate(${(speed / 100) * 180 - 90}deg)`,
+                }}
               />
               <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-cyan-400 rounded-full transform -translate-x-1/2 -translate-y-1/2" />
             </div>
@@ -292,8 +414,8 @@ const NetworkSpeedRacing = () => {
           <div>↑ {Math.round(data.upload)} Mbps</div>
         </div>
       </div>
-    )
-  }
+    );
+  };
 
   const RaceTrack = () => (
     <div className="relative h-80 bg-gradient-to-b from-gray-800 to-gray-900 rounded-lg overflow-hidden border-2 border-cyan-400">
@@ -387,7 +509,9 @@ const NetworkSpeedRacing = () => {
           left: `${playerPosition}%`,
           top: "20%",
           transform: "translate(-50%, -50%)",
-          filter: playerHitObstacle ? "brightness(0.7) contrast(1.2)" : "brightness(1)",
+          filter: playerHitObstacle
+            ? "brightness(0.7) contrast(1.2)"
+            : "brightness(1)",
         }}
       >
         <div className="relative">
@@ -403,9 +527,15 @@ const NetworkSpeedRacing = () => {
           {showTurbo && (
             <>
               <div className="absolute -right-8 top-1/2 transform -translate-y-1/2 flex space-x-1">
-                {turboLevel >= 1 && <div className="w-3 h-8 bg-orange-400 rounded animate-pulse opacity-90" />}
-                {turboLevel >= 2 && <div className="w-2 h-6 bg-red-400 rounded animate-pulse opacity-70" />}
-                {turboLevel >= 3 && <div className="w-2 h-4 bg-yellow-400 rounded animate-pulse opacity-50" />}
+                {turboLevel >= 1 && (
+                  <div className="w-3 h-8 bg-orange-400 rounded animate-pulse opacity-90" />
+                )}
+                {turboLevel >= 2 && (
+                  <div className="w-2 h-6 bg-red-400 rounded animate-pulse opacity-70" />
+                )}
+                {turboLevel >= 3 && (
+                  <div className="w-2 h-4 bg-yellow-400 rounded animate-pulse opacity-50" />
+                )}
               </div>
 
               {/* Turbo particles - more particles for higher levels */}
@@ -450,7 +580,9 @@ const NetworkSpeedRacing = () => {
           left: `${opponentPosition}%`,
           top: "60%",
           transform: "translate(-50%, -50%)",
-          filter: opponentHitObstacle ? "brightness(0.7) contrast(1.2)" : "brightness(1)",
+          filter: opponentHitObstacle
+            ? "brightness(0.7) contrast(1.2)"
+            : "brightness(1)",
         }}
       >
         <div className="relative">
@@ -465,7 +597,9 @@ const NetworkSpeedRacing = () => {
 
       {/* Finish line */}
       <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-b from-white via-black to-white opacity-90 flex items-center justify-center">
-        <div className="text-black font-bold text-xs transform rotate-90">FINISH</div>
+        <div className="text-black font-bold text-xs transform rotate-90">
+          FINISH
+        </div>
       </div>
 
       {/* Reactions */}
@@ -479,10 +613,14 @@ const NetworkSpeedRacing = () => {
 
       {/* Obstacle hit indicators */}
       {playerHitObstacle && (
-        <div className="absolute top-4 left-4 text-red-400 font-bold animate-pulse">OBSTACLE HIT! -70% SPEED</div>
+        <div className="absolute top-4 left-4 text-red-400 font-bold animate-pulse">
+          OBSTACLE HIT! -70% SPEED
+        </div>
       )}
       {opponentHitObstacle && (
-        <div className="absolute top-12 left-4 text-orange-400 font-bold animate-pulse">OPPONENT HIT OBSTACLE!</div>
+        <div className="absolute top-12 left-4 text-orange-400 font-bold animate-pulse">
+          OPPONENT HIT OBSTACLE!
+        </div>
       )}
 
       {/* Party poppers and confetti */}
@@ -503,14 +641,25 @@ const NetworkSpeedRacing = () => {
           ))}
 
           {/* Party popper emojis */}
-          <div className="absolute top-4 left-4 text-4xl animate-bounce">🎉</div>
-          <div className="absolute top-4 right-4 text-4xl animate-bounce" style={{ animationDelay: "0.5s" }}>
-            🎊
-          </div>
-          <div className="absolute bottom-4 left-4 text-4xl animate-bounce" style={{ animationDelay: "1s" }}>
+          <div className="absolute top-4 left-4 text-4xl animate-bounce">
             🎉
           </div>
-          <div className="absolute bottom-4 right-4 text-4xl animate-bounce" style={{ animationDelay: "1.5s" }}>
+          <div
+            className="absolute top-4 right-4 text-4xl animate-bounce"
+            style={{ animationDelay: "0.5s" }}
+          >
+            🎊
+          </div>
+          <div
+            className="absolute bottom-4 left-4 text-4xl animate-bounce"
+            style={{ animationDelay: "1s" }}
+          >
+            🎉
+          </div>
+          <div
+            className="absolute bottom-4 right-4 text-4xl animate-bounce"
+            style={{ animationDelay: "1.5s" }}
+          >
             🎊
           </div>
         </div>
@@ -520,17 +669,21 @@ const NetworkSpeedRacing = () => {
         <div
           className={`w-3 h-3 rounded-full ${isConnected ? "bg-green-400 animate-pulse" : "bg-red-400 animate-ping"}`}
         />
-        <span className={`text-sm font-medium ${isConnected ? "text-green-400" : "text-red-400"}`}>
+        <span
+          className={`text-sm font-medium ${isConnected ? "text-green-400" : "text-red-400"}`}
+        >
           {isConnected ? "Connected" : "Connection Lost"}
         </span>
       </div>
     </div>
-  )
+  );
 
   const MultiplayerModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <Card className="p-8 bg-gray-800 border-cyan-400 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <h2 className="text-2xl font-bold text-white mb-6 text-center">Multiplayer Racing</h2>
+        <h2 className="text-2xl font-bold text-white mb-6 text-center">
+          Multiplayer Racing
+        </h2>
 
         <div className="space-y-6">
           <div className="text-center">
@@ -551,15 +704,15 @@ const NetworkSpeedRacing = () => {
                         speed: 0,
                       },
                     }),
-                  })
-                  const data = await response.json()
+                  });
+                  const data = await response.json();
                   if (data.success) {
-                    setIsHost(true)
-                    setRoomCode(data.room.code)
-                    setRoomPlayers(data.room.players)
+                    setIsHost(true);
+                    setRoomCode(data.room.code);
+                    setRoomPlayers(data.room.players);
                   }
                 } catch (error) {
-                  console.error("Failed to create room:", error)
+                  console.error("Failed to create room:", error);
                 }
               }}
               className="w-full mb-4 bg-green-600 hover:bg-green-700"
@@ -570,8 +723,12 @@ const NetworkSpeedRacing = () => {
 
             {isHost && roomCode && (
               <div className="p-4 bg-gray-700 rounded-lg">
-                <p className="text-gray-300 mb-2">Share this code with your friends:</p>
-                <div className="text-3xl font-bold text-cyan-400 tracking-wider mb-2">{roomCode}</div>
+                <p className="text-gray-300 mb-2">
+                  Share this code with your friends:
+                </p>
+                <div className="text-3xl font-bold text-cyan-400 tracking-wider mb-2">
+                  {roomCode}
+                </div>
                 <p className="text-sm text-gray-400 mb-4">
                   Players: {roomPlayers.length}/{maxPlayers}
                 </p>
@@ -579,23 +736,33 @@ const NetworkSpeedRacing = () => {
                 {/* Player List */}
                 <div className="space-y-2 mb-4">
                   {roomPlayers.map((player, index) => (
-                    <div key={player.id} className="flex items-center justify-between p-2 bg-gray-600 rounded">
+                    <div
+                      key={player.id}
+                      className="flex items-center justify-between p-2 bg-gray-600 rounded"
+                    >
                       <div className="flex items-center gap-2">
                         <span className="text-lg">{player.avatar}</span>
-                        <span className="text-white font-medium">{player.name}</span>
+                        <span className="text-white font-medium">
+                          {player.name}
+                        </span>
                         {index === 0 && (
                           <Badge variant="secondary" className="text-xs">
                             Host
                           </Badge>
                         )}
                       </div>
-                      <span className="text-cyan-400 text-sm">{player.vehicle || "No vehicle"}</span>
+                      <span className="text-cyan-400 text-sm">
+                        {player.vehicle || "No vehicle"}
+                      </span>
                     </div>
                   ))}
                 </div>
 
                 {roomPlayers.length >= 2 && (
-                  <Button onClick={startRace} className="w-full bg-blue-600 hover:bg-blue-700">
+                  <Button
+                    onClick={startRace}
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                  >
                     Start Race ({roomPlayers.length} Players)
                   </Button>
                 )}
@@ -627,7 +794,9 @@ const NetworkSpeedRacing = () => {
                           action: "join",
                           roomCode,
                           player: {
-                            id: "player_" + Math.random().toString(36).substr(2, 9),
+                            id:
+                              "player_" +
+                              Math.random().toString(36).substr(2, 9),
                             name: user?.username || "Player",
                             avatar: user?.avatar || "🎮",
                             vehicle: selectedCar.name,
@@ -635,18 +804,18 @@ const NetworkSpeedRacing = () => {
                             speed: 0,
                           },
                         }),
-                      })
-                      const data = await response.json()
+                      });
+                      const data = await response.json();
                       if (data.success) {
-                        setRoomPlayers(data.room.players)
-                        setShowMultiplayerModal(false)
-                        startRace()
+                        setRoomPlayers(data.room.players);
+                        setShowMultiplayerModal(false);
+                        startRace();
                       } else {
-                        alert(data.error)
+                        alert(data.error);
                       }
                     } catch (error) {
-                      console.error("Failed to join room:", error)
-                      alert("Failed to join room")
+                      console.error("Failed to join room:", error);
+                      alert("Failed to join room");
                     }
                   }
                 }}
@@ -670,10 +839,10 @@ const NetworkSpeedRacing = () => {
           </Button>
           <Button
             onClick={() => {
-              setShowMultiplayerModal(false)
-              setRoomCode("")
-              setIsHost(false)
-              setRoomPlayers([])
+              setShowMultiplayerModal(false);
+              setRoomCode("");
+              setIsHost(false);
+              setRoomPlayers([]);
             }}
             variant="outline"
             className="flex-1"
@@ -683,7 +852,7 @@ const NetworkSpeedRacing = () => {
         </div>
       </Card>
     </div>
-  )
+  );
 
   // Not Found / Crash Screen
   if (gameState === "notfound") {
@@ -693,28 +862,46 @@ const NetworkSpeedRacing = () => {
           {/* Crashed Ambulance */}
           <div className="mb-8 relative">
             <div className="text-8xl mb-4 animate-bounce">🚑</div>
-            <div className="absolute -top-4 -right-4 text-4xl animate-pulse">💥</div>
+            <div className="absolute -top-4 -right-4 text-4xl animate-pulse">
+              💥
+            </div>
             <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
               <div className="flex space-x-2">
                 <div className="w-3 h-3 bg-orange-500 rounded-full animate-ping"></div>
-                <div className="w-2 h-2 bg-red-500 rounded-full animate-ping" style={{ animationDelay: "0.5s" }}></div>
-                <div className="w-4 h-4 bg-yellow-500 rounded-full animate-ping" style={{ animationDelay: "1s" }}></div>
+                <div
+                  className="w-2 h-2 bg-red-500 rounded-full animate-ping"
+                  style={{ animationDelay: "0.5s" }}
+                ></div>
+                <div
+                  className="w-4 h-4 bg-yellow-500 rounded-full animate-ping"
+                  style={{ animationDelay: "1s" }}
+                ></div>
               </div>
             </div>
           </div>
 
           {/* Error Message */}
           <div className="mb-8">
-            <h1 className="text-6xl font-bold text-red-400 mb-4 animate-pulse">CONNECTION CRASHED!</h1>
-            <p className="text-2xl text-gray-300 mb-4">Oops! Your network speed couldn't handle the race!</p>
-            <p className="text-lg text-gray-400 mb-6">The ambulance has been called to rescue your connection.</p>
+            <h1 className="text-6xl font-bold text-red-400 mb-4 animate-pulse">
+              CONNECTION CRASHED!
+            </h1>
+            <p className="text-2xl text-gray-300 mb-4">
+              Oops! Your network speed couldn't handle the race!
+            </p>
+            <p className="text-lg text-gray-400 mb-6">
+              The ambulance has been called to rescue your connection.
+            </p>
 
             {/* Enhanced Crash Stats */}
             <Card className="bg-gray-800 border-red-500 p-6 mb-6">
-              <h3 className="text-xl font-bold text-white mb-4">🚨 Connection Crash Report</h3>
+              <h3 className="text-xl font-bold text-white mb-4">
+                🚨 Connection Crash Report
+              </h3>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-red-400">CONNECTION LOST</div>
+                  <div className="text-2xl font-bold text-red-400">
+                    CONNECTION LOST
+                  </div>
                   <div className="text-gray-400">During Race</div>
                 </div>
                 <div className="text-center">
@@ -724,11 +911,15 @@ const NetworkSpeedRacing = () => {
                   <div className="text-gray-400">Time Since Last Update</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-yellow-400">{Math.round(playerPosition)}%</div>
+                  <div className="text-2xl font-bold text-yellow-400">
+                    {Math.round(playerPosition)}%
+                  </div>
                   <div className="text-gray-400">Race Progress Lost</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-400">999ms</div>
+                  <div className="text-2xl font-bold text-purple-400">
+                    999ms
+                  </div>
                   <div className="text-gray-400">Last Ping</div>
                 </div>
               </div>
@@ -757,7 +948,9 @@ const NetworkSpeedRacing = () => {
 
           {/* Emergency Tips */}
           <div className="mt-8 text-left max-w-md mx-auto">
-            <h4 className="text-lg font-bold text-yellow-400 mb-2">🚨 Emergency Network Tips:</h4>
+            <h4 className="text-lg font-bold text-yellow-400 mb-2">
+              🚨 Emergency Network Tips:
+            </h4>
             <ul className="text-sm text-gray-400 space-y-1">
               <li>• Check your WiFi connection</li>
               <li>• Restart your router</li>
@@ -768,7 +961,7 @@ const NetworkSpeedRacing = () => {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   // Main menu
@@ -781,8 +974,12 @@ const NetworkSpeedRacing = () => {
             <div className="flex items-center gap-2">
               <span className="text-2xl">{user.avatar}</span>
               <div>
-                <div className="text-white font-bold">Welcome, {user.username}!</div>
-                <div className="text-green-300 text-sm">Ready to race with your network speed?</div>
+                <div className="text-white font-bold">
+                  Welcome, {user.username}!
+                </div>
+                <div className="text-green-300 text-sm">
+                  Ready to race with your network speed?
+                </div>
               </div>
             </div>
           </Card>
@@ -796,11 +993,19 @@ const NetworkSpeedRacing = () => {
             <div className="flex items-center gap-3">
               <span className="text-3xl">{user.avatar}</span>
               <div className="text-left">
-                <div className="text-xl font-bold text-white">{user.username}</div>
-                <div className="text-sm text-gray-400">{user.isp || "Unknown ISP"}</div>
+                <div className="text-xl font-bold text-white">
+                  {user.username}
+                </div>
+                <div className="text-sm text-gray-400">
+                  {user.isp || "Unknown ISP"}
+                </div>
               </div>
             </div>
-            <Button onClick={handleLogout} variant="outline" className="flex items-center gap-2 bg-transparent">
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              className="flex items-center gap-2 bg-transparent"
+            >
               <LogOut className="w-4 h-4" />
               Logout
             </Button>
@@ -812,7 +1017,9 @@ const NetworkSpeedRacing = () => {
           <h1 className="text-6xl font-bold text-white mb-4 animate-pulse">
             <span className="text-cyan-400">Network</span> Speed Racing
           </h1>
-          <p className="text-xl text-gray-300">Race with your internet speed! Faster connection = Faster car!</p>
+          <p className="text-xl text-gray-300">
+            Race with your internet speed! Faster connection = Faster car!
+          </p>
         </div>
 
         {/* Current network status */}
@@ -823,22 +1030,30 @@ const NetworkSpeedRacing = () => {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center">
-              <div className="text-3xl font-bold text-cyan-400">{Math.round(playerData.ping)}ms</div>
+              <div className="text-3xl font-bold text-cyan-400">
+                {Math.round(playerData.ping)}ms
+              </div>
               <div className="text-gray-400">Ping</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-green-400">{Math.round(playerData.download)} Mbps</div>
+              <div className="text-3xl font-bold text-green-400">
+                {Math.round(playerData.download)} Mbps
+              </div>
               <div className="text-gray-400">Download</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-blue-400">{Math.round(playerData.upload)} Mbps</div>
+              <div className="text-3xl font-bold text-blue-400">
+                {Math.round(playerData.upload)} Mbps
+              </div>
               <div className="text-gray-400">Upload</div>
             </div>
           </div>
           <div className="mt-4">
             <div className="text-lg text-white">
               Estimated Speed:{" "}
-              <span className="text-cyan-400 font-bold">{Math.round(calculateSpeed(playerData))} MPH</span>
+              <span className="text-cyan-400 font-bold">
+                {Math.round(calculateSpeed(playerData))} MPH
+              </span>
             </div>
           </div>
         </Card>
@@ -856,7 +1071,9 @@ const NetworkSpeedRacing = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto">
             <Button
-              onClick={() => (user ? router.push("/garage") : router.push("/auth/login"))}
+              onClick={() =>
+                user ? router.push("/garage") : router.push("/auth/login")
+              }
               variant="outline"
               size="lg"
               className="py-4"
@@ -869,7 +1086,9 @@ const NetworkSpeedRacing = () => {
             </Button>
 
             <Button
-              onClick={() => (user ? router.push("/leaderboard") : router.push("/auth/login"))}
+              onClick={() =>
+                user ? router.push("/leaderboard") : router.push("/auth/login")
+              }
               variant="outline"
               size="lg"
               className="py-4"
@@ -879,7 +1098,11 @@ const NetworkSpeedRacing = () => {
             </Button>
 
             <Button
-              onClick={() => (user ? setShowMultiplayerModal(true) : router.push("/auth/login"))}
+              onClick={() =>
+                user
+                  ? setShowMultiplayerModal(true)
+                  : router.push("/auth/login")
+              }
               variant="outline"
               size="lg"
               className="py-4 bg-transparent"
@@ -894,13 +1117,22 @@ const NetworkSpeedRacing = () => {
         {!user && (
           <div className="mt-8 space-y-4">
             <div className="text-center">
-              <p className="text-gray-400 mb-4">Join the racing community to unlock all features!</p>
+              <p className="text-gray-400 mb-4">
+                Join the racing community to unlock all features!
+              </p>
               <div className="flex gap-4 justify-center">
-                <Button onClick={() => router.push("/auth/login")} className="bg-cyan-600 hover:bg-cyan-700 px-8 py-3">
+                <Button
+                  onClick={() => router.push("/auth/login")}
+                  className="bg-cyan-600 hover:bg-cyan-700 px-8 py-3"
+                >
                   <User className="w-5 h-5 mr-2" />
                   Sign In
                 </Button>
-                <Button onClick={() => router.push("/auth/signup")} variant="outline" className="px-8 py-3">
+                <Button
+                  onClick={() => router.push("/auth/signup")}
+                  variant="outline"
+                  className="px-8 py-3"
+                >
                   Create Account
                 </Button>
               </div>
@@ -912,15 +1144,21 @@ const NetworkSpeedRacing = () => {
         {user && (
           <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
             <div className="text-center">
-              <div className="text-2xl font-bold text-yellow-400">{user.points || playerPoints}</div>
+              <div className="text-2xl font-bold text-yellow-400">
+                {user.points || playerPoints}
+              </div>
               <div className="text-gray-400 text-sm">Points</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-400">{user.wins || 12}</div>
+              <div className="text-2xl font-bold text-green-400">
+                {user.wins || 12}
+              </div>
               <div className="text-gray-400 text-sm">Wins</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-red-400">{user.losses || 8}</div>
+              <div className="text-2xl font-bold text-red-400">
+                {user.losses || 8}
+              </div>
               <div className="text-gray-400 text-sm">Losses</div>
             </div>
             <div className="text-center">
@@ -944,7 +1182,7 @@ const NetworkSpeedRacing = () => {
 
       {showMultiplayerModal && <MultiplayerModal />}
     </div>
-  )
-}
+  );
+};
 
-export default NetworkSpeedRacing
+export default NetworkSpeedRacing;
