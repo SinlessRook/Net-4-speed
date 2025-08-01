@@ -2,10 +2,12 @@ from fastapi import FastAPI, WebSocket
 import time
 import asyncio
 import random
+from .routers.garageRoutes import router as garage_router
+from .routers.userRoutes import router as user_router
 
 app = FastAPI()
 
-@app.websocket("/ws")
+@app.websocket("/speedtest")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     try:
@@ -16,7 +18,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 end_time = time.time() + 10
                 while time.time() < end_time:
                     start_time = time.time()
-                    # Send a random chunk of data (e.g., 0.5MB to 2MB)
+                    # Send a random chunk of data (e.g., 1MB to 20MB)
                     chunk_size = random.randint(1024 * 1024, 2 * 10000 * 1024)
                     chunk = "0" * chunk_size
                     await websocket.send_text(chunk)
@@ -51,3 +53,5 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception:
         await websocket.close()
 
+app.include_router(garage_router, prefix="/garage", tags=["garage"])
+app.include_router(user_router, prefix="/auth", tags=["auth"])
