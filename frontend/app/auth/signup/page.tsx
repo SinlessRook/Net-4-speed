@@ -1,16 +1,34 @@
-"use client"
+/**
+ * @file This file contains the signup page.
+ */
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { ArrowLeft, Eye, EyeOff, Wifi, Mail, Lock, User, Globe } from "lucide-react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
+"use client";
 
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  Wifi,
+  Mail,
+  Lock,
+  User,
+  Globe,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { signup } from "@/lib/api";
+import Link from "next/link";
+
+/**
+ * The signup page component.
+ * @returns The signup page.
+ */
 const SignupPage = () => {
-  const router = useRouter()
+  const router = useRouter();
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -18,102 +36,118 @@ const SignupPage = () => {
     confirmPassword: "",
     isp: "",
     avatar: "🏎️",
-  })
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [step, setStep] = useState(1) // Multi-step form
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [step, setStep] = useState(1); // Multi-step form
 
-  const avatarOptions = ["🏎️", "🚗", "🏁", "⚡", "🎮", "🚀", "🔥", "⭐", "🌟", "💎"]
+  const avatarOptions = [
+    "🏎️",
+    "🚗",
+    "🏁",
+    "⚡",
+    "🎮",
+    "🚀",
+    "🔥",
+    "⭐",
+    "🌟",
+    "💎",
+  ];
 
+  /**
+   * Handles the input change event.
+   * @param e The event object.
+   */
   const handleInputChange = (e) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }))
-    setError("") // Clear error when user types
-  }
+    }));
+    setError(""); // Clear error when user types
+  };
 
+  /**
+   * Validates the first step of the form.
+   * @returns True if the step is valid, false otherwise.
+   */
   const validateStep1 = () => {
     if (!formData.username.trim()) {
-      setError("Username is required")
-      return false
+      setError("Username is required");
+      return false;
     }
     if (formData.username.length < 3) {
-      setError("Username must be at least 3 characters")
-      return false
+      setError("Username must be at least 3 characters");
+      return false;
     }
     if (!formData.email.trim()) {
-      setError("Email is required")
-      return false
+      setError("Email is required");
+      return false;
     }
     if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      setError("Please enter a valid email")
-      return false
+      setError("Please enter a valid email");
+      return false;
     }
-    return true
-  }
+    return true;
+  };
 
+  /**
+   * Validates the second step of the form.
+   * @returns True if the step is valid, false otherwise.
+   */
   const validateStep2 = () => {
     if (!formData.password) {
-      setError("Password is required")
-      return false
+      setError("Password is required");
+      return false;
     }
     if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters")
-      return false
+      setError("Password must be at least 6 characters");
+      return false;
     }
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match")
-      return false
+      setError("Passwords do not match");
+      return false;
     }
-    return true
-  }
+    return true;
+  };
 
+  /**
+   * Handles the next button click.
+   */
   const handleNext = () => {
-    setError("")
+    setError("");
     if (step === 1 && validateStep1()) {
-      setStep(2)
+      setStep(2);
     } else if (step === 2 && validateStep2()) {
-      setStep(3)
+      setStep(3);
     }
-  }
+  };
 
+  /**
+   * Handles the form submission.
+   * @param e The event object.
+   */
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setError("")
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
-      // Mock user creation
-      const newUser = {
-        id: Math.random().toString(36).substr(2, 9),
-        username: formData.username,
-        email: formData.email,
-        avatar: formData.avatar,
-        isp: formData.isp || "Unknown ISP",
-        points: 0,
-        wins: 0,
-        losses: 0,
-        createdAt: new Date().toISOString(),
-      }
-
-      // Store user session
-      localStorage.setItem("user", JSON.stringify(newUser))
-
-      // Redirect to main game
-      router.push("/?welcome=true")
+      const { access_token, refresh_token } = await signup(
+        formData.username,
+        formData.password,
+      );
+      localStorage.setItem("token", access_token);
+      localStorage.setItem("refreshToken", refresh_token);
+      router.push("/?welcome=true");
     } catch (err) {
-      setError("Registration failed. Please try again.")
+      setError("Registration failed. Please try again.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-cyan-900 to-gray-900 p-4 flex items-center justify-center">
@@ -136,18 +170,29 @@ const SignupPage = () => {
               <div key={stepNum} className="flex items-center">
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                    step >= stepNum ? "bg-cyan-600 text-white" : "bg-gray-600 text-gray-400"
+                    step >= stepNum
+                      ? "bg-cyan-600 text-white"
+                      : "bg-gray-600 text-gray-400"
                   }`}
                 >
                   {stepNum}
                 </div>
-                {stepNum < 3 && <div className={`w-8 h-1 mx-2 ${step > stepNum ? "bg-cyan-600" : "bg-gray-600"}`} />}
+                {stepNum < 3 && (
+                  <div
+                    className={`w-8 h-1 mx-2 ${step > stepNum ? "bg-cyan-600" : "bg-gray-600"}`}
+                  />
+                )}
               </div>
             ))}
           </div>
           <div className="text-center mt-2">
             <span className="text-sm text-gray-400">
-              Step {step} of 3: {step === 1 ? "Basic Info" : step === 2 ? "Security" : "Personalization"}
+              Step {step} of 3:{" "}
+              {step === 1
+                ? "Basic Info"
+                : step === 2
+                  ? "Security"
+                  : "Personalization"}
             </span>
           </div>
         </div>
@@ -155,7 +200,9 @@ const SignupPage = () => {
         {/* Signup Form */}
         <Card className="p-8 bg-gray-800 border-cyan-400">
           <div className="mb-6">
-            <h2 className="text-2xl font-bold text-white text-center mb-2">Create Account</h2>
+            <h2 className="text-2xl font-bold text-white text-center mb-2">
+              Create Account
+            </h2>
             <p className="text-gray-400 text-center">
               {step === 1 && "Let's start with your basic information"}
               {step === 2 && "Secure your account with a password"}
@@ -174,7 +221,10 @@ const SignupPage = () => {
             {step === 1 && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="username" className="text-white flex items-center gap-2">
+                  <Label
+                    htmlFor="username"
+                    className="text-white flex items-center gap-2"
+                  >
                     <User className="w-4 h-4 text-cyan-400" />
                     Username
                   </Label>
@@ -191,7 +241,10 @@ const SignupPage = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-white flex items-center gap-2">
+                  <Label
+                    htmlFor="email"
+                    className="text-white flex items-center gap-2"
+                  >
                     <Mail className="w-4 h-4 text-cyan-400" />
                     Email Address
                   </Label>
@@ -213,7 +266,10 @@ const SignupPage = () => {
             {step === 2 && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="password" className="text-white flex items-center gap-2">
+                  <Label
+                    htmlFor="password"
+                    className="text-white flex items-center gap-2"
+                  >
                     <Lock className="w-4 h-4 text-cyan-400" />
                     Password
                   </Label>
@@ -233,13 +289,20 @@ const SignupPage = () => {
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
                     >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword" className="text-white flex items-center gap-2">
+                  <Label
+                    htmlFor="confirmPassword"
+                    className="text-white flex items-center gap-2"
+                  >
                     <Lock className="w-4 h-4 text-cyan-400" />
                     Confirm Password
                   </Label>
@@ -256,10 +319,16 @@ const SignupPage = () => {
                     />
                     <button
                       type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
                       className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white"
                     >
-                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      {showConfirmPassword ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -270,7 +339,10 @@ const SignupPage = () => {
             {step === 3 && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="isp" className="text-white flex items-center gap-2">
+                  <Label
+                    htmlFor="isp"
+                    className="text-white flex items-center gap-2"
+                  >
                     <Globe className="w-4 h-4 text-cyan-400" />
                     Internet Service Provider (Optional)
                   </Label>
@@ -292,7 +364,9 @@ const SignupPage = () => {
                       <button
                         key={avatar}
                         type="button"
-                        onClick={() => setFormData((prev) => ({ ...prev, avatar }))}
+                        onClick={() =>
+                          setFormData((prev) => ({ ...prev, avatar }))
+                        }
                         className={`p-3 text-2xl rounded-lg border-2 transition-all ${
                           formData.avatar === avatar
                             ? "border-cyan-400 bg-cyan-900"
@@ -315,11 +389,17 @@ const SignupPage = () => {
                   />
                   <label htmlFor="terms" className="text-sm text-gray-300">
                     I agree to the{" "}
-                    <Link href="/terms" className="text-cyan-400 hover:text-cyan-300">
+                    <Link
+                      href="/terms"
+                      className="text-cyan-400 hover:text-cyan-300"
+                    >
                       Terms of Service
                     </Link>{" "}
                     and{" "}
-                    <Link href="/privacy" className="text-cyan-400 hover:text-cyan-300">
+                    <Link
+                      href="/privacy"
+                      className="text-cyan-400 hover:text-cyan-300"
+                    >
                       Privacy Policy
                     </Link>
                   </label>
@@ -330,7 +410,12 @@ const SignupPage = () => {
             {/* Navigation Buttons */}
             <div className="flex gap-3">
               {step > 1 && (
-                <Button type="button" onClick={() => setStep(step - 1)} variant="outline" className="flex-1">
+                <Button
+                  type="button"
+                  onClick={() => setStep(step - 1)}
+                  variant="outline"
+                  className="flex-1"
+                >
                   Back
                 </Button>
               )}
@@ -366,7 +451,10 @@ const SignupPage = () => {
           <div className="mt-6 text-center">
             <p className="text-gray-400">
               Already have an account?{" "}
-              <Link href="/auth/login" className="text-cyan-400 hover:text-cyan-300 font-medium">
+              <Link
+                href="/auth/login"
+                className="text-cyan-400 hover:text-cyan-300 font-medium"
+              >
                 Sign in here
               </Link>
             </p>
@@ -375,14 +463,18 @@ const SignupPage = () => {
 
         {/* Back to Home */}
         <div className="mt-6 text-center">
-          <Button onClick={() => router.push("/")} variant="outline" className="flex items-center gap-2 mx-auto">
+          <Button
+            onClick={() => router.push("/")}
+            variant="outline"
+            className="flex items-center gap-2 mx-auto"
+          >
             <ArrowLeft className="w-4 h-4" />
             Back to Home
           </Button>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default SignupPage
+export default SignupPage;
