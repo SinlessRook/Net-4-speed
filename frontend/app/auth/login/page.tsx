@@ -1,5 +1,5 @@
 /**
- * @file This file contains the login page.
+ * @file This file contains the login page using username.
  */
 
 "use client";
@@ -9,79 +9,63 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Eye, EyeOff, Wifi, Mail, Lock } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Wifi, User, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { signin } from "@/lib/api";
 import Link from "next/link";
 
-/**
- * The login page component.
- * @returns The login page.
- */
 const LoginPage = () => {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    email: "",
+    username: "",
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  /**
-   * Handles the input change event.
-   * @param e The event object.
-   */
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
-    setError(""); // Clear error when user types
+    setError("");
   };
 
-  /**
-   * Handles the form submission.
-   * @param e The event object.
-   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
     try {
-      const { access_token, refresh_token } = await signin(
-        formData.email,
+      const data = await signin(
+        formData.username,
         formData.password,
       );
-      localStorage.setItem("token", access_token);
-      localStorage.setItem("refreshToken", refresh_token);
+      console.log("Login successful:", data);
+      localStorage.setItem("token", data.access_token);
+      localStorage.setItem("refreshToken", data.refresh_token);
       router.push("/");
     } catch (err) {
-      setError("Login failed. Please try again.");
+      setError("Login failed. Please check your username and password.");
     } finally {
       setLoading(false);
     }
   };
 
-  /**
-   * Handles the demo login button click.
-   */
   const handleDemoLogin = async () => {
     setFormData({
-      email: "demo@racing.com",
+      username: "SpeedRacer",
       password: "password",
     });
     setLoading(true);
 
-    // Auto-submit after setting demo credentials
     setTimeout(() => {
       localStorage.setItem(
         "user",
         JSON.stringify({
           id: "1",
-          email: "demo@racing.com",
           username: "SpeedRacer",
           avatar: "🏎️",
           points: 1850,
@@ -96,7 +80,6 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-cyan-900 to-gray-900 p-4 flex items-center justify-center">
       <div className="max-w-md w-full">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-3 mb-4">
             <Wifi className="w-10 h-10 text-cyan-400" />
@@ -109,7 +92,6 @@ const LoginPage = () => {
           </p>
         </div>
 
-        {/* Login Form */}
         <Card className="p-8 bg-gray-800 border-cyan-400">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-white text-center mb-2">
@@ -127,22 +109,22 @@ const LoginPage = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
+            {/* Username Field */}
             <div className="space-y-2">
               <Label
-                htmlFor="email"
+                htmlFor="username"
                 className="text-white flex items-center gap-2"
               >
-                <Mail className="w-4 h-4 text-cyan-400" />
-                Email Address
+                <User className="w-4 h-4 text-cyan-400" />
+                Username
               </Label>
               <Input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
+                id="username"
+                name="username"
+                type="text"
+                value={formData.username}
                 onChange={handleInputChange}
-                placeholder="Enter your email"
+                placeholder="Enter your username"
                 className="bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-cyan-400"
                 required
               />
@@ -227,7 +209,7 @@ const LoginPage = () => {
               🎮 Try Demo Account
             </Button>
             <p className="text-xs text-gray-500 text-center mt-2">
-              Email: demo@racing.com | Password: password
+              Username: SpeedRacer | Password: password
             </p>
           </div>
 

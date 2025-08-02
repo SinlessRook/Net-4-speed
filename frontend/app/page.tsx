@@ -388,7 +388,6 @@ const NetworkSpeedRacing = () => {
 
   const Speedometer = ({ data, label }) => {
     const speed = calculateSpeed(data);
-
     return (
       <div className="relative">
         <div className="w-32 h-32 rounded-full border-4 border-cyan-400 bg-gray-900 relative overflow-hidden">

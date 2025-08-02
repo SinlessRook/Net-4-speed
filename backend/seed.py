@@ -92,12 +92,30 @@ vehicles = [
     },
 ]
 
+leaderboard = [
+    { "id": "1", "username": "SpeedDemon", "points": 2450, "wins": 45, "losses": 12, "avatar": "🏎️", "isp": "Fiber Pro" },
+    { "id": "2", "username": "TurboNet", "points": 2380, "wins": 42, "losses": 15, "avatar": "🚗", "isp": "Ultra ISP" },
+    { "id": "3", "username": "RaceKing", "points": 2200, "wins": 38, "losses": 18, "avatar": "🏁", "isp": "Lightning Web" },
+    { "id": "4", "username": "NetNinja", "points": 2100, "wins": 35, "losses": 20, "avatar": "⚡", "isp": "Speed Force" },
+    { "id": "5", "username": "CyberRacer", "points": 1950, "wins": 32, "losses": 23, "avatar": "🎮", "isp": "Quantum Net" },
+    { "id": "6", "username": "VelocityViper", "points": 1850, "wins": 28, "losses": 25, "avatar": "🐍", "isp": "Hyper Link" },
+    { "id": "7", "username": "NitroNomad", "points": 1750, "wins": 25, "losses": 28, "avatar": "🔥", "isp": "Blaze ISP" },
+    { "id": "8", "username": "PixelPilot", "points": 1650, "wins": 22, "losses": 30, "avatar": "🚀", "isp": "Rocket Net" },
+]
 
 async def seed_vehicles():
-    await db.vehicles.delete_many({})  # wipe garage clean, optional
+    await db.vehicles.delete_many({})
     await db.vehicles.insert_many(vehicles)
-    print("Garage seeded!")
+    print("🚗 Vehicles seeded.")
 
+async def seed_leaderboard():
+    await db.leaderboard.delete_many({})
+    await db.leaderboard.insert_many(leaderboard)
+    print("🏁 Leaderboard seeded.")
+
+async def seed_all():
+    await seed_vehicles()
+    await seed_leaderboard()
 
 if __name__ == "__main__":
-    asyncio.run(seed_vehicles())
+    asyncio.run(seed_all())

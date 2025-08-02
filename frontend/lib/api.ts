@@ -3,6 +3,7 @@
  */
 
 import axios from "axios";
+import api from "../app/src/axios"; // Adjust the import path as necessary
 
 const API_URL = "http://localhost:8000";
 
@@ -13,7 +14,7 @@ const API_URL = "http://localhost:8000";
  * @returns The response from the server.
  */
 export const signup = async (username, password) => {
-  const response = await axios.post(`${API_URL}/auth/signup`, {
+  const response = await api.post(`/auth/signup`, {
     username,
     password,
   });
@@ -27,11 +28,17 @@ export const signup = async (username, password) => {
  * @returns The response from the server.
  */
 export const signin = async (username, password) => {
-  const response = await axios.post(`${API_URL}/auth/signin`, {
-    username,
-    password,
+  const form = new FormData();
+  form.append("username", username);
+  form.append("password", password);
+
+  const response = await api.post("/auth/signin", form, {
+    headers: {
+      "Content-Type": "multipart/form-data", // or omit this; axios sets it automatically
+    },
   });
-  return response.data;
+  console.log("Signin response:", response.data);
+  return await response.data;
 };
 
 /**

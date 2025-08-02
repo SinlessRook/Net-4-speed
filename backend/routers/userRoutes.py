@@ -39,6 +39,7 @@ class UserIn(BaseModel):
 
     username: str
     password: str
+    email: str | None = None  # Optional email field
 
 
 class UserOut(BaseModel):

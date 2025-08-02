@@ -9,10 +9,12 @@ from fastapi import FastAPI, WebSocket
 import asyncio
 import random
 import time
-
-
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from .routers.garageRoutes import router as garage_router
 from .routers.userRoutes import router as user_router
+from .routers.leaderboardRoutes import router as leaderboard_router
+
 
 app = FastAPI(
     title="Net-4-Speed API",
@@ -20,6 +22,21 @@ app = FastAPI(
     version="0.1.0",
 )
 
+
+
+origins = [
+    "http://localhost:3000",  # React dev server
+    "http://127.0.0.1:3000",  # Alt localhost
+    # Add your production frontend URL too if needed
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,  # 🛡️ Allow these frontend origins
+    allow_credentials=True,
+    allow_methods=["*"],     # Allow all HTTP methods (GET, POST...)
+    allow_headers=["*"],     # Allow all headers (auth etc.)
+)
 
 @app.websocket("/speedtest")
 async def websocket_endpoint(websocket: WebSocket):
@@ -36,7 +53,7 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_text()
             if data == "start_download":
                 # Simulate sending data for 10 seconds to the client
-                end_time = time.time() + 10
+                end_time = time.time() + 100
                 while time.time() < end_time:
                     start_time = time.time()
                     # Generate a random chunk of data (e.g., 1MB to 20MB)
@@ -83,3 +100,4 @@ async def websocket_endpoint(websocket: WebSocket):
 # Include routers for different API functionalities
 app.include_router(garage_router, prefix="/garage", tags=["garage"])
 app.include_router(user_router, prefix="/auth", tags=["auth"])
+app.include_router(leaderboard_router)
