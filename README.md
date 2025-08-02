@@ -80,29 +80,31 @@ pnpm dev
 ### Project Documentation
 
 # Screenshots
+![Landing Page](./pictures/landing%20page.png)
+**
 
-![Race Track](https://via.placeholder.com/800x400/1f2937/ffffff?text=Race+Track+View)
+![Race Track](./pictures/racetrack.png)
 *The main racing interface showing player and opponent cars, obstacles, and real-time speed statistics*
 
-![Speed Testing](https://via.placeholder.com/800x400/1f2937/ffffff?text=Speed+Test+Interface)
-*WebSocket-based speed testing with live download/upload measurements*
+![Leaderboard](./pictures/leaderboard.png)
+**
 
 
 # Diagrams
-![Workflow](###Architecture
+![Workflow](
 
 ```
 Frontend (Next.js) ←→ WebSocket ←→ Backend (FastAPI)
      ↓                    ↓              ↓
   React UI          Speed Testing    Database
   Components        Real-time Data   SQLite
-```)
-*Add caption explaining your workflow*
+```
+
+)
 
 ### Project Demo
-# Video
-[Add demo video link here]
-*Demonstrates the complete net speed racing*
+[Video Demo](./pictures/videodemo.mp4)
+*Demonstrates the net speed racing*
 
 
 ## Team Contributions
@@ -113,7 +115,7 @@ Frontend (Next.js) ←→ WebSocket ←→ Backend (FastAPI)
 - **API Development**: RESTful endpoints for race data
 - **WebSocket Implementation**: Real-time communication protocol
 
-##Adithyan AS:
+## Adithyan AS:
 - **Frontend Development**: Next.js application with React components
 - **UI/UX Design**: Modern racing interface with Tailwind CSS
 - **Race Logic**: Player movement, opponent AI, obstacle system
@@ -130,5 +132,3 @@ Made with ❤️ at TinkerHub Useless Projects
 
 ![Static Badge](https://img.shields.io/badge/TinkerHub-24?color=%23000000&link=https%3A%2F%2Fwww.tinkerhub.org%2F)
 ![Static Badge](https://img.shields.io/badge/UselessProjects--25-25?link=https%3A%2F%2Fwww.tinkerhub.org%2Fevents%2FQ2Q1TQKX6Q%2FUseless%2520Projects)
-
-
