@@ -45,6 +45,7 @@ const RacePage = () => {
   const ws = useRef(null);
 
   useEffect(() => {
+    if(opponentPosition==100){ws.close(); return;}
     ws.current = new WebSocket("ws://localhost:8000/speedtest");
 
     ws.current.onopen = () => {
@@ -91,13 +92,17 @@ const RacePage = () => {
   }, []);
 
   useEffect(() => {
-    if (isRacing && raceStarted) {
+    if (isRacing && raceStarted && playerSpeed > 0) {
       const raceInterval = setInterval(() => {
         setRaceTime((prev) => prev + 0.1);
         // Simulate opponent
-        const opponentSpeed = Math.random() * 100;
+        if(raceTime%2 === 0) {
+          setRaceTime(prev => prev + 0.1);
+        return;
+        }
+        const opponentSpeed = Math.random() * 100 %50;
         setOpponentSpeed(opponentSpeed);
-        setOpponentPosition((prev) => Math.min(100, prev + opponentSpeed / 10));
+        setOpponentPosition((prev) => Math.min(100, prev + opponentSpeed*0.5 / 10));
 
         const playerHit = checkObstacleCollision(playerPosition, 25, obstacles);
         const opponentHit = checkObstacleCollision(
@@ -112,7 +117,7 @@ const RacePage = () => {
         const playerSpeedModifier = playerHit ? 0.3 : 1;
 
         setPlayerPosition((prev) =>
-          Math.min(100, prev + (playerSpeed / 10) * playerSpeedModifier),
+          Math.min(100, prev + (playerSpeed*0.5 / 10) * playerSpeedModifier),
         );
       }, 100);
 
